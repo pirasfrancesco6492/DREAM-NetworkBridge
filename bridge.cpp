@@ -42,17 +42,12 @@ using namespace std;
 
 #define AGEING_TIME 300
 
-/* Definition of the Node struct */
-
 struct Node {
     char MAC[19];
     int port;
     time_t timestamp;
     struct Node* next;
 };
-
-/* remove function: deletes THE NEXT NODE of the one passed to it, 
-and returns the next one */
 
 void initialize(Node* current, char MAC[], int port) {
     strcpy(current->MAC, MAC);
@@ -68,9 +63,6 @@ Node* remove(Node *current) {
 	return current->next;
 }
 
-/* printList function: starting from the first node, PRINTS ATTRIBUTES OF THE ENTIRE LIST and 
-DOES NOT RETURN A NODE */
-
 void printList(Node* first) {
     Node* current = first;
     time_t now = time(NULL);
@@ -84,12 +76,6 @@ void printList(Node* first) {
     }
     cout << "-------------------------------------------------------------------------" << endl << endl;
 }
-
-/* cleanList function: iterates through the list to check which node exceeds 300 seconds 
-and should therefore be removed. 
-CASE 1: 'first' exceeds the time. 
-CASE 2: 'current' exceeds the time 
-(because the remove function removes current->next) */
 
 Node* cleanList(Node* first) {
     if (first == nullptr) return nullptr;
@@ -124,12 +110,6 @@ Node* cleanList(Node* first) {
     return first;
 }
 
-/* searchPort function: searches THROUGH THE ENTIRE LIST for a node whose MAC_receiver 
-matches the MAC_sender of the current node. 
-If found, returns THE PORT of that node 
-through which the frame should be forwarded. 
-Otherwise, returns -1 */
-
 int searchPort(Node* first, char MAC_receiver[], int values[]) {
     if (first-> next == NULL) return -2;
     Node* current = first;
@@ -147,14 +127,6 @@ int searchPort(Node* first, char MAC_receiver[], int values[]) {
     }
     return -1;
 }
-
-/* filtering function: decides the network output. 
-If MAC_sender and MAC_receiver are the same 
-(frame sent to itself), the request is ignored. 
-Otherwise, it searches for a match using the searchPort function. 
-If the port is found, the frame is sent to that port. 
-Otherwise, it's broadcasted to all ports of the bridge 
-except the caller's port */
 
 void filtering(char MAC_sender[], int port, char MAC_receiver[], Node* first, int values[]) {
     if(strcmp(MAC_sender, MAC_receiver) == 0) {
@@ -181,13 +153,8 @@ void filtering(char MAC_sender[], int port, char MAC_receiver[], Node* first, in
     }
 }
 
-/* learning function: stores nodes in the dynamic list */
-
 Node* learning(char MAC_sender[], int port, Node* first, bool &IsEmpty) {
-
-    /* Brief check for empty list */
     if (IsEmpty) {
-        /* NOW creates a node and assigns it certain values */
         first = new Node();
         initialize(first, MAC_sender, port);
         first->next = nullptr;
@@ -197,14 +164,11 @@ Node* learning(char MAC_sender[], int port, Node* first, bool &IsEmpty) {
     
     Node* current = first;
 
-    /* Looks for matching MAC addresses */
     while (current != NULL) {
         if (strcmp(current->MAC, MAC_sender) == 0) {
-            /* If only the MAC matches, update the port */
             if (current->port != port) {
                 current->port = port;
             }
-            /* Always update the timestamp */
             current->timestamp = time(NULL);
             return first;
         }
