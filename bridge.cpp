@@ -1,38 +1,3 @@
-/* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
-
-Network Bridge Simulation with Store-and-Forward Algorithm
- *
- * This program simulates a network bridge that implements a store-and-forward algorithm
- * to manage Ethernet frame forwarding based on MAC addresses. It maintains a dynamic MAC
- * address table, learning source MAC addresses and their associated ports, and forwards
- * frames to the appropriate port or broadcasts them if the destination is unknown.
- *
- * Key Features:
- * - Learns MAC addresses and ports from incoming frames, updating a linked list-based table.
- * - Forwards frames to a specific port if the destination MAC is known, or broadcasts to all
- *   ports (except the sender's) if unknown.
- * - Removes table entries older than AGEING_TIME (300 seconds) to prevent stale data.
- * - Validates input in the format: "XX:XX:XX:XX:XX:XX,port,XX:XX:XX:XX:XX:XX" where
- *   MAC addresses use uppercase hexadecimal (0-9, A-F) and port is a positive integer.
- *
- * Input:
- * - Reads input lines from stdin until "stop" is received.
- * - Expected format: MAC_sender,port,MAC_receiver (e.g., "00:1A:2B:3C:4D:5E,1000,00:1A:2B:3C:4D:5F").
- *
- * Output:
- * - Logs decisions (forwarding, broadcasting, or ignoring frames) and MAC table state.
- *
- * Assumptions and Limitations:
- * - Input must be exactly 40 characters long (MACs, commas, and port).
- * - MAC addresses use only uppercase hexadecimal digits (0-9, A-F).
- * - Invalid inputs (e.g., non-positive ports, invalid MACs) are silently ignored.
- * - Memory allocation failures are not handled.
- *
- * Author: Francesco Piras
- * Date: October 6th 2025
- * 
- * -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-. */
-
 #include <iostream>
 #include <string.h>
 #include <cstdlib>
@@ -42,17 +7,12 @@ using namespace std;
 
 #define AGEING_TIME 300
 
-/* Definition of the Node struct */
-
 struct Node {
     char MAC[19];
     int port;
     time_t timestamp;
     struct Node* next;
 };
-
-/* remove function: deletes THE NEXT NODE of the one passed to it, 
-and returns the next one */
 
 void initialize(Node* current, char MAC[], int port) {
     strcpy(current->MAC, MAC);
@@ -68,9 +28,6 @@ Node* remove(Node *current) {
 	return current->next;
 }
 
-/* printList function: starting from the first node, PRINTS ATTRIBUTES OF THE ENTIRE LIST and 
-DOES NOT RETURN A NODE */
-
 void printList(Node* first) {
     Node* current = first;
     time_t now = time(NULL);
@@ -84,12 +41,6 @@ void printList(Node* first) {
     }
     cout << "-------------------------------------------------------------------------" << endl << endl;
 }
-
-/* cleanList function: iterates through the list to check which node exceeds 300 seconds 
-and should therefore be removed. 
-CASE 1: 'first' exceeds the time. 
-CASE 2: 'current' exceeds the time 
-(because the remove function removes current->next) */
 
 Node* cleanList(Node* first) {
     if (first == nullptr) return nullptr;
@@ -124,12 +75,6 @@ Node* cleanList(Node* first) {
     return first;
 }
 
-/* searchPort function: searches THROUGH THE ENTIRE LIST for a node whose MAC_receiver 
-matches the MAC_sender of the current node. 
-If found, returns THE PORT of that node 
-through which the frame should be forwarded. 
-Otherwise, returns -1 */
-
 int searchPort(Node* first, char MAC_receiver[], int values[]) {
     if (first-> next == NULL) return -2;
     Node* current = first;
@@ -147,14 +92,6 @@ int searchPort(Node* first, char MAC_receiver[], int values[]) {
     }
     return -1;
 }
-
-/* filtering function: decides the network output. 
-If MAC_sender and MAC_receiver are the same 
-(frame sent to itself), the request is ignored. 
-Otherwise, it searches for a match using the searchPort function. 
-If the port is found, the frame is sent to that port. 
-Otherwise, it's broadcasted to all ports of the bridge 
-except the caller's port */
 
 void filtering(char MAC_sender[], int port, char MAC_receiver[], Node* first, int values[]) {
     if(strcmp(MAC_sender, MAC_receiver) == 0) {
@@ -181,13 +118,8 @@ void filtering(char MAC_sender[], int port, char MAC_receiver[], Node* first, in
     }
 }
 
-/* learning function: stores nodes in the dynamic list */
-
 Node* learning(char MAC_sender[], int port, Node* first, bool &IsEmpty) {
-
-    /* Brief check for empty list */
     if (IsEmpty) {
-        /* NOW creates a node and assigns it certain values */
         first = new Node();
         initialize(first, MAC_sender, port);
         first->next = nullptr;
@@ -197,14 +129,11 @@ Node* learning(char MAC_sender[], int port, Node* first, bool &IsEmpty) {
     
     Node* current = first;
 
-    /* Looks for matching MAC addresses */
     while (current != NULL) {
         if (strcmp(current->MAC, MAC_sender) == 0) {
-            /* If only the MAC matches, update the port */
             if (current->port != port) {
                 current->port = port;
             }
-            /* Always update the timestamp */
             current->timestamp = time(NULL);
             return first;
         }
@@ -278,48 +207,3 @@ int main() {
 
     return 0;
 }
-
-/* -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
-
-                                            OUTPUT EXAMPLE:
-
-[BRIDGE MODULE] Initializing Store-and-Forward Algorithm...
-[BRIDGE MODULE] Learning Table Initialized | Timestamp: Mon Oct  6 17:36:28 2025
-
-00:1A:2B:3C:4D:5E,1000,01:1A:2B:3C:4D:5E
-
-[FILTERING DECISION] No port to broadcast to
-[MAINTENANCE] Cleaning MAC table: removing stale entries older than 300 seconds.
-[MAINTENANCE RESULT] MAC table updated | Timestamp: Mon Oct  6 17:37:02 2025
-
-[MAC TABLE STATE] | Timestamp: Mon Oct  6 17:37:02 2025
--------------------------------------------------------------------------
-MAC: 00:1A:2B:3C:4D:5E | Port: 1000 | Timestamp: Mon Oct  6 17:37:02 2025
--------------------------------------------------------------------------
-
-02:1A:2B:3C:4D:5E,2000,01:1A:2B:3C:4D:5E
-
-[FILTERING DECISION] Destination MAC not found. Broadcasting frame to all ports: 1000 
-[MAINTENANCE] Cleaning MAC table: removing stale entries older than 300 seconds.
-[MAINTENANCE RESULT] MAC table updated | Timestamp: Mon Oct  6 17:37:38 2025
-
-[MAC TABLE STATE] | Timestamp: Mon Oct  6 17:37:38 2025
--------------------------------------------------------------------------
-MAC: 00:1A:2B:3C:4D:5E | Port: 1000 | Timestamp: Mon Oct  6 17:37:02 2025
-MAC: 02:1A:2B:3C:4D:5E | Port: 2000 | Timestamp: Mon Oct  6 17:37:38 2025
--------------------------------------------------------------------------
-
-03:1A:2B:3C:4D:5E,3000,03:1A:2B:3C:4D:5E
-
-[FILTERING DECISION] Frame ignored — source and destination MAC addresses identical.
-[MAINTENANCE] Cleaning MAC table: removing stale entries older than 300 seconds.
-[MAINTENANCE RESULT] MAC table updated | Timestamp: Mon Oct  6 17:38:12 2025
-
-[MAC TABLE STATE] | Timestamp: Mon Oct  6 17:38:12 2025
--------------------------------------------------------------------------
-MAC: 00:1A:2B:3C:4D:5E | Port: 1000 | Timestamp: Mon Oct  6 17:37:02 2025
-MAC: 02:1A:2B:3C:4D:5E | Port: 2000 | Timestamp: Mon Oct  6 17:37:38 2025
-MAC: 03:1A:2B:3C:4D:5E | Port: 3000 | Timestamp: Mon Oct  6 17:38:12 2025
--------------------------------------------------------------------------
-
--.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-. */
